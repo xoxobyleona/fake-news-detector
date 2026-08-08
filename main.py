@@ -155,31 +155,6 @@ col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     analyze_btn = st.button("🔍 Elemzés indítása", use_container_width=True)
 
-# --- KÉP KIVÁLASZTÁSA SZÁZALÉK ALAPJÁN (A FŐ MAPPÁBÓL) ---
-def get_image_path(score):
-    if score <= 10:
-        return "0.png"
-    elif score <= 20:
-        return "10.png"
-    elif score <= 30:
-        return "20.png"
-    elif score <= 40:
-        return "30.png"
-    elif score <= 50:
-        return "40.png"
-    elif score <= 60:
-        return "50.png"
-    elif score <= 70:
-        return "60.png"
-    elif score <= 80:
-        return "70.png"
-    elif score <= 90:
-        return "80.png"
-    elif score <= 95:
-        return "90.png"
-    else:
-        return "100.png"
-
 # --- ELEMZÉS ---
 if analyze_btn and user_input:
     with st.spinner("🔎 Elemzés folyamatban..."):
