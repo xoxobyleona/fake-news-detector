@@ -153,7 +153,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- CÍM ---
-st.title("🛡️ Fake News Detector")
+st.title("Fake News Detector")
 st.markdown("*Add meg egy cikk szövegét, és megtudod, mennyire hiteles!*")
 st.markdown("---")
 
