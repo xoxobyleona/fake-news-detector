@@ -116,16 +116,6 @@ st.markdown("""
     .stSpinner {
         color: #0d9488 !important;
     }
-    .stButton button[kind="secondary"] {
-        background: transparent !important;
-        color: #0d9488 !important;
-        border: 2px solid #14b8a6 !important;
-        box-shadow: none !important;
-    }
-    .stButton button[kind="secondary"]:hover {
-        background: #14b8a6 !important;
-        color: white !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -177,7 +167,7 @@ if analyze_btn and user_input:
             analysis = data.get("analysis", "Nincs elemzés")
             issues = data.get("issues", [])
 
-            # --- SZÍN MEGHATÁROZÁSA (TÜRKIZ ÁRNYLATOK) ---
+            # --- SZÍN MEGHATÁROZÁSA ---
             if score >= 80:
                 color = "#0d9488"
                 label = "HITELES"
@@ -195,16 +185,13 @@ if analyze_btn and user_input:
                 label = "VALÓSZÍNŰLEG HAMIS"
                 desc = "A cikk erősen félrevezető."
 
-            image_path = get_image_path(score)
-
             st.session_state['last_result'] = {
                 'score': score,
                 'label': label,
                 'desc': desc,
                 'analysis': analysis,
                 'issues': issues,
-                'color': color,
-                'image_path': image_path
+                'color': color
             }
 
         except Exception as e:
@@ -219,45 +206,38 @@ if 'last_result' in st.session_state:
     analysis = res['analysis']
     issues = res['issues']
     color = res['color']
-    image_path = res['image_path']
 
     st.markdown("---")
     st.markdown(f"""
     <div class="result-card">
-        <div class="label">🎯 Hitelességi szint</div>
+        <div class="label">Hitelességi szint</div>
         <div class="score" style="color: {color};">{score}%</div>
         <h2 style="color: {color};">{label}</h2>
         <div class="desc">{desc}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- KÉP MEGJELENÍTÉSE ---
-    try:
-        st.image(image_path, width=200)
-    except Exception as e:
-        st.info(f"🖼️ Kép betöltése nem sikerült: {e}")
-
-    st.markdown("### 📋 Részletes elemzés")
+    st.markdown("### Részletes elemzés")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("📝 Mi alapján értékeltem?", use_container_width=True):
+        if st.button("Mi alapján értékeltem?", use_container_width=True):
             st.session_state['show_analysis'] = True
-        if st.button("📊 Összegzés", use_container_width=True):
+        if st.button("Összegzés", use_container_width=True):
             st.session_state['show_summary'] = True
 
     with col2:
-        if st.button("🔍 Részletes problémák", use_container_width=True):
+        if st.button("Részletes problémák", use_container_width=True):
             st.session_state['show_issues'] = True
-        if st.button("🔄 Új elemzés", use_container_width=True):
+        if st.button("Új elemzés", use_container_width=True):
             st.session_state['last_result'] = None
             st.rerun()
 
     if st.session_state.get('show_analysis', False):
         st.markdown("""
         <div class="detail-content">
-            <b>📝 Mi alapján értékeltem?</b><br><br>
+            <b>Mi alapján értékeltem?</b><br><br>
             A cikket az alábbi <b>5 szempont</b> alapján vizsgáltam:
             <ol style="margin-top: 10px; line-height: 1.8;">
                 <li><b>Logikai és ténybeli ellentmondások</b> – Van-e ellentmondás a szövegben?</li>
@@ -273,17 +253,17 @@ if 'last_result' in st.session_state:
     if st.session_state.get('show_summary', False):
         st.markdown(f"""
         <div class="detail-content">
-            <b>📊 Összegzés</b><br><br>
+            <b>Összegzés</b><br><br>
             {analysis}
         </div>
         """, unsafe_allow_html=True)
         st.session_state['show_summary'] = False
 
     if st.session_state.get('show_issues', False):
-        issues_html = "".join([f"<li>{issue}</li>" for issue in issues]) if issues else "<li>✅ Nincs konkrét probléma</li>"
+        issues_html = "".join([f"<li>{issue}</li>" for issue in issues]) if issues else "<li>Nincs konkrét probléma</li>"
         st.markdown(f"""
         <div class="detail-content">
-            <b>🔍 Részletes problémák</b><br>
+            <b>Részletes problémák</b><br>
             <ul style="margin-top: 10px; line-height: 1.8;">{issues_html}</ul>
         </div>
         """, unsafe_allow_html=True)
