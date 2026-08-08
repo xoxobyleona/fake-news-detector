@@ -17,32 +17,23 @@ st.set_page_config(
 # --- EGYEDI CSS (FEHÉR-TÜRKIZ) ---
 st.markdown("""
 <style>
-    /* Teljes háttér */
     .stApp {
         background: linear-gradient(135deg, #f0fdfa, #e6f9f5) !important;
     }
-    
-    /* Minden szöveg */
     .stApp, .stMarkdown, p, div, span, label {
         color: #1a2e35 !important;
     }
-    
-    /* Cím */
     h1 {
         color: #0d9488 !important;
         text-align: center !important;
         font-family: 'Arial Black', sans-serif !important;
         font-size: 3rem !important;
     }
-    
-    /* Alcím */
     .stMarkdown p {
         color: #1a2e35 !important;
         text-align: center !important;
         font-size: 1.2rem !important;
     }
-    
-    /* Szövegmező */
     .stTextArea textarea {
         background-color: #ffffff !important;
         color: #1a2e35 !important;
@@ -55,8 +46,6 @@ st.markdown("""
         border-color: #0d9488 !important;
         box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2) !important;
     }
-    
-    /* Gomb */
     .stButton button {
         background: linear-gradient(135deg, #14b8a6, #0d9488) !important;
         color: white !important;
@@ -71,8 +60,6 @@ st.markdown("""
         transform: scale(1.03) !important;
         box-shadow: 0 6px 25px rgba(13, 148, 136, 0.4) !important;
     }
-    
-    /* Eredmény kártya */
     .result-card {
         background: #ffffff;
         border-radius: 20px;
@@ -101,8 +88,6 @@ st.markdown("""
         color: #5a7a82;
         margin-top: 8px;
     }
-    
-    /* Részletes tartalom doboz */
     .detail-content {
         background: #ffffff;
         border-radius: 15px;
@@ -114,8 +99,6 @@ st.markdown("""
     .detail-content b {
         color: #0d9488;
     }
-    
-    /* Lábléc */
     .footer {
         text-align: center;
         padding: 20px;
@@ -124,21 +107,15 @@ st.markdown("""
         border-top: 1px solid #e6f9f5;
         margin-top: 40px;
     }
-    
-    /* Figyelmeztetések */
     .stAlert {
         background-color: #ffffff !important;
         border-radius: 15px !important;
         border-left: 4px solid #14b8a6 !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
     }
-    
-    /* Spinner */
     .stSpinner {
         color: #0d9488 !important;
     }
-    
-    /* Gombok az eredménynél (türkiz keretes) */
     .stButton button[kind="secondary"] {
         background: transparent !important;
         color: #0d9488 !important;
@@ -178,7 +155,32 @@ col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
     analyze_btn = st.button("🔍 Elemzés indítása", use_container_width=True)
 
-# --- EREDMÉNY MEGJELENÍTÉS ---
+# --- KÉP KIVÁLASZTÁSA SZÁZALÉK ALAPJÁN (A FŐ MAPPÁBÓL) ---
+def get_image_path(score):
+    if score <= 10:
+        return "0.png"
+    elif score <= 20:
+        return "10.png"
+    elif score <= 30:
+        return "20.png"
+    elif score <= 40:
+        return "30.png"
+    elif score <= 50:
+        return "40.png"
+    elif score <= 60:
+        return "50.png"
+    elif score <= 70:
+        return "60.png"
+    elif score <= 80:
+        return "70.png"
+    elif score <= 90:
+        return "80.png"
+    elif score <= 95:
+        return "90.png"
+    else:
+        return "100.png"
+
+# --- ELEMZÉS ---
 if analyze_btn and user_input:
     with st.spinner("🔎 Elemzés folyamatban..."):
         try:
@@ -202,21 +204,23 @@ if analyze_btn and user_input:
 
             # --- SZÍN MEGHATÁROZÁSA (TÜRKIZ ÁRNYLATOK) ---
             if score >= 80:
-                color = "#0d9488"      # sötét türkiz
+                color = "#0d9488"
                 label = "HITELES"
                 desc = "A cikk megbízható forrásból származik."
             elif score >= 60:
-                color = "#14b8a6"      # közepes türkiz
+                color = "#14b8a6"
                 label = "MEGKÉRDŐJELEZHETŐ"
                 desc = "A cikk néhány ponton aggályos."
             elif score >= 40:
-                color = "#f59e0b"      # arany (csak figyelmeztetés)
+                color = "#f59e0b"
                 label = "GYANÚS"
                 desc = "A cikk több problémát is mutat."
             else:
-                color = "#ef4444"      # piros (csak ha nagyon súlyos)
+                color = "#ef4444"
                 label = "VALÓSZÍNŰLEG HAMIS"
                 desc = "A cikk erősen félrevezető."
+
+            image_path = get_image_path(score)
 
             st.session_state['last_result'] = {
                 'score': score,
@@ -224,7 +228,8 @@ if analyze_btn and user_input:
                 'desc': desc,
                 'analysis': analysis,
                 'issues': issues,
-                'color': color
+                'color': color,
+                'image_path': image_path
             }
 
         except Exception as e:
@@ -239,6 +244,7 @@ if 'last_result' in st.session_state:
     analysis = res['analysis']
     issues = res['issues']
     color = res['color']
+    image_path = res['image_path']
 
     st.markdown("---")
     st.markdown(f"""
@@ -249,6 +255,12 @@ if 'last_result' in st.session_state:
         <div class="desc">{desc}</div>
     </div>
     """, unsafe_allow_html=True)
+
+    # --- KÉP MEGJELENÍTÉSE ---
+    try:
+        st.image(image_path, width=200)
+    except Exception as e:
+        st.info(f"🖼️ Kép betöltése nem sikerült: {e}")
 
     st.markdown("### 📋 Részletes elemzés")
 
