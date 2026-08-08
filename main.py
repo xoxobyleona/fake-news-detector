@@ -1,5 +1,7 @@
 import streamlit as st
 from groq import Groq
+import json
+import re
 
 # 🔑 API KULCS
 GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
@@ -12,99 +14,141 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- EGYEDI CSS ---
+# --- EGYEDI CSS (FEHÉR-TÜRKIZ) ---
 st.markdown("""
 <style>
+    /* Teljes háttér */
     .stApp {
-        background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        background: linear-gradient(135deg, #f0fdfa, #e6f9f5) !important;
     }
+    
+    /* Minden szöveg */
+    .stApp, .stMarkdown, p, div, span, label {
+        color: #1a2e35 !important;
+    }
+    
+    /* Cím */
     h1 {
-        color: #ff6b6b !important;
+        color: #0d9488 !important;
         text-align: center !important;
         font-family: 'Arial Black', sans-serif !important;
         font-size: 3rem !important;
     }
+    
+    /* Alcím */
     .stMarkdown p {
-        color: #d1d5db !important;
+        color: #1a2e35 !important;
         text-align: center !important;
         font-size: 1.2rem !important;
     }
+    
+    /* Szövegmező */
     .stTextArea textarea {
-        background-color: #1e1e2e !important;
-        color: #ffffff !important;
-        border: 2px solid #ff6b6b !important;
+        background-color: #ffffff !important;
+        color: #1a2e35 !important;
+        border: 2px solid #14b8a6 !important;
         border-radius: 15px !important;
         padding: 15px !important;
+        font-size: 16px !important;
     }
+    .stTextArea textarea:focus {
+        border-color: #0d9488 !important;
+        box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2) !important;
+    }
+    
+    /* Gomb */
     .stButton button {
-        background: linear-gradient(135deg, #ff6b6b, #ee5a24) !important;
+        background: linear-gradient(135deg, #14b8a6, #0d9488) !important;
         color: white !important;
         border: none !important;
         border-radius: 30px !important;
         padding: 12px 40px !important;
         font-weight: bold !important;
         transition: all 0.3s ease !important;
+        box-shadow: 0 4px 15px rgba(13, 148, 136, 0.3) !important;
     }
     .stButton button:hover {
-        transform: scale(1.05) !important;
+        transform: scale(1.03) !important;
+        box-shadow: 0 6px 25px rgba(13, 148, 136, 0.4) !important;
     }
+    
     /* Eredmény kártya */
     .result-card {
-        background: rgba(30, 30, 46, 0.9);
+        background: #ffffff;
         border-radius: 20px;
         padding: 30px;
         text-align: center;
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        border: 1px solid #e6f9f5;
         margin: 20px 0;
     }
-    .result-card h2 {
-        margin: 0;
-        font-size: 2.5rem;
+    .result-card .label {
+        font-size: 1.1rem;
+        color: #5a7a82;
+        margin-bottom: 5px;
     }
     .result-card .score {
         font-size: 4rem;
         font-weight: bold;
-        margin: 10px 0;
+        margin: 5px 0;
     }
-    .result-card .label {
-        font-size: 1.2rem;
-        opacity: 0.8;
+    .result-card h2 {
+        margin: 0;
+        font-size: 2rem;
     }
-    /* Részletes info gombok */
-    .detail-btn {
-        background: rgba(255, 255, 255, 0.05) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 15px !important;
-        padding: 15px !important;
-        width: 100% !important;
-        text-align: left !important;
-        color: white !important;
-        transition: all 0.3s ease !important;
+    .result-card .desc {
+        font-size: 1.1rem;
+        color: #5a7a82;
+        margin-top: 8px;
     }
-    .detail-btn:hover {
-        background: rgba(255, 107, 107, 0.1) !important;
-        border-color: #ff6b6b !important;
-    }
+    
+    /* Részletes tartalom doboz */
     .detail-content {
-        background: rgba(0, 0, 0, 0.3);
+        background: #ffffff;
         border-radius: 15px;
         padding: 20px;
         margin: 10px 0;
-        border-left: 3px solid #ff6b6b;
+        border-left: 4px solid #14b8a6;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
     }
+    .detail-content b {
+        color: #0d9488;
+    }
+    
+    /* Lábléc */
     .footer {
         text-align: center;
         padding: 20px;
-        color: #666;
-        font-size: 14px;
-        border-top: 1px solid #333;
+        color: #94a3b8 !important;
+        font-size: 13px;
+        border-top: 1px solid #e6f9f5;
         margin-top: 40px;
     }
-    .green { color: #2ecc71; }
-    .yellow { color: #f1c40f; }
-    .orange { color: #e67e22; }
-    .red { color: #e74c3c; }
+    
+    /* Figyelmeztetések */
+    .stAlert {
+        background-color: #ffffff !important;
+        border-radius: 15px !important;
+        border-left: 4px solid #14b8a6 !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
+    }
+    
+    /* Spinner */
+    .stSpinner {
+        color: #0d9488 !important;
+    }
+    
+    /* Gombok az eredménynél (türkiz keretes) */
+    .stButton button[kind="secondary"] {
+        background: transparent !important;
+        color: #0d9488 !important;
+        border: 2px solid #14b8a6 !important;
+        box-shadow: none !important;
+    }
+    .stButton button[kind="secondary"]:hover {
+        background: #14b8a6 !important;
+        color: white !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -145,12 +189,7 @@ if analyze_btn and user_input:
                 max_tokens=800
             )
 
-            # Válasz feldolgozása
-            import json
-            import re
-
             raw = response.choices[0].message.content
-            # JSON kinyerése a szövegből
             json_match = re.search(r'\{.*\}', raw, re.DOTALL)
             if json_match:
                 data = json.loads(json_match.group())
@@ -161,42 +200,37 @@ if analyze_btn and user_input:
             analysis = data.get("analysis", "Nincs elemzés")
             issues = data.get("issues", [])
 
-            # --- SZÍN ÉS IKON MEGHATÁROZÁSA ---
+            # --- SZÍN MEGHATÁROZÁSA (TÜRKIZ ÁRNYLATOK) ---
             if score >= 80:
-                color = "#2ecc71"
-                emoji = "🟢"
+                color = "#0d9488"      # sötét türkiz
                 label = "HITELES"
                 desc = "A cikk megbízható forrásból származik."
             elif score >= 60:
-                color = "#f1c40f"
-                emoji = "🟡"
+                color = "#14b8a6"      # közepes türkiz
                 label = "MEGKÉRDŐJELEZHETŐ"
                 desc = "A cikk néhány ponton aggályos."
             elif score >= 40:
-                color = "#e67e22"
-                emoji = "🟠"
+                color = "#f59e0b"      # arany (csak figyelmeztetés)
                 label = "GYANÚS"
                 desc = "A cikk több problémát is mutat."
             else:
-                color = "#e74c3c"
-                emoji = "🔴"
+                color = "#ef4444"      # piros (csak ha nagyon súlyos)
                 label = "VALÓSZÍNŰLEG HAMIS"
                 desc = "A cikk erősen félrevezető."
 
-            # --- ELEMZÉS TÁROLÁSA SESSION-BE ---
             st.session_state['last_result'] = {
                 'score': score,
                 'label': label,
                 'desc': desc,
                 'analysis': analysis,
                 'issues': issues,
-                'raw': raw
+                'color': color
             }
 
         except Exception as e:
             st.error(f"❌ Hiba: {e}")
 
-# --- EREDMÉNY MEGJELENÍTÉSE (HA VAN) ---
+# --- EREDMÉNY MEGJELENÍTÉSE ---
 if 'last_result' in st.session_state:
     res = st.session_state['last_result']
     score = res['score']
@@ -204,19 +238,18 @@ if 'last_result' in st.session_state:
     desc = res['desc']
     analysis = res['analysis']
     issues = res['issues']
+    color = res['color']
 
-    # --- KÁRTYA ---
     st.markdown("---")
     st.markdown(f"""
     <div class="result-card">
-        <div class="label">Hitelességi szint</div>
+        <div class="label">🎯 Hitelességi szint</div>
         <div class="score" style="color: {color};">{score}%</div>
         <h2 style="color: {color};">{label}</h2>
-        <div class="label">{desc}</div>
+        <div class="desc">{desc}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    # --- RÉSZLETES GOMBOK ---
     st.markdown("### 📋 Részletes elemzés")
 
     col1, col2 = st.columns(2)
@@ -234,13 +267,12 @@ if 'last_result' in st.session_state:
             st.session_state['last_result'] = None
             st.rerun()
 
-    # --- TARTALOMAK ---
     if st.session_state.get('show_analysis', False):
         st.markdown("""
         <div class="detail-content">
-            <b>📝 Mi alapján értékeltem?</b><br>
-            A cikket az alábbi 5 szempont alapján vizsgáltam:
-            <ol>
+            <b>📝 Mi alapján értékeltem?</b><br><br>
+            A cikket az alábbi <b>5 szempont</b> alapján vizsgáltam:
+            <ol style="margin-top: 10px; line-height: 1.8;">
                 <li><b>Logikai és ténybeli ellentmondások</b> – Van-e ellentmondás a szövegben?</li>
                 <li><b>Félrevezető információk</b> – Kiragadott vagy félrevezető állítások?</li>
                 <li><b>Túlzó cím</b> – A cím szenzációhajhász?</li>
@@ -254,18 +286,18 @@ if 'last_result' in st.session_state:
     if st.session_state.get('show_summary', False):
         st.markdown(f"""
         <div class="detail-content">
-            <b>📊 Összegzés</b><br>
+            <b>📊 Összegzés</b><br><br>
             {analysis}
         </div>
         """, unsafe_allow_html=True)
         st.session_state['show_summary'] = False
 
     if st.session_state.get('show_issues', False):
-        issues_html = "".join([f"<li>{issue}</li>" for issue in issues]) if issues else "<li>Nincs konkrét probléma</li>"
+        issues_html = "".join([f"<li>{issue}</li>" for issue in issues]) if issues else "<li>✅ Nincs konkrét probléma</li>"
         st.markdown(f"""
         <div class="detail-content">
             <b>🔍 Részletes problémák</b><br>
-            <ul>{issues_html}</ul>
+            <ul style="margin-top: 10px; line-height: 1.8;">{issues_html}</ul>
         </div>
         """, unsafe_allow_html=True)
         st.session_state['show_issues'] = False
