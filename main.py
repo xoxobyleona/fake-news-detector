@@ -3,37 +3,46 @@ from groq import Groq
 import json
 import re
 
-# 🔑 API KULCS
+# 🔑 API KEY
 GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 client = Groq(api_key=GROQ_API_KEY)
 
-# --- OLDAL BEÁLLÍTÁSOK ---
+# --- PAGE CONFIG ---
 st.set_page_config(
     page_title="🔍 Fake News Detector",
     page_icon="🛡️",
     layout="wide"
 )
 
-# --- EGYEDI CSS (FEHÉR-TÜRKIZ) ---
+# --- CUSTOM CSS (WHITE-TEAL) ---
 st.markdown("""
 <style>
+    /* Full background */
     .stApp {
         background: linear-gradient(135deg, #f0fdfa, #e6f9f5) !important;
     }
+    
+    /* All text */
     .stApp, .stMarkdown, p, div, span, label {
         color: #1a2e35 !important;
     }
+    
+    /* Title */
     h1 {
         color: #0d9488 !important;
         text-align: center !important;
         font-family: 'Arial Black', sans-serif !important;
         font-size: 3rem !important;
     }
+    
+    /* Subtitle */
     .stMarkdown p {
         color: #1a2e35 !important;
         text-align: center !important;
         font-size: 1.2rem !important;
     }
+    
+    /* Text area */
     .stTextArea textarea {
         background-color: #ffffff !important;
         color: #1a2e35 !important;
@@ -46,6 +55,8 @@ st.markdown("""
         border-color: #0d9488 !important;
         box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2) !important;
     }
+    
+    /* Button */
     .stButton button {
         background: linear-gradient(135deg, #14b8a6, #0d9488) !important;
         color: white !important;
@@ -60,6 +71,8 @@ st.markdown("""
         transform: scale(1.03) !important;
         box-shadow: 0 6px 25px rgba(13, 148, 136, 0.4) !important;
     }
+    
+    /* Result card */
     .result-card {
         background: #ffffff;
         border-radius: 20px;
@@ -88,6 +101,8 @@ st.markdown("""
         color: #5a7a82;
         margin-top: 8px;
     }
+    
+    /* Detail content box */
     .detail-content {
         background: #ffffff;
         border-radius: 15px;
@@ -99,6 +114,8 @@ st.markdown("""
     .detail-content b {
         color: #0d9488;
     }
+    
+    /* Footer */
     .footer {
         text-align: center;
         padding: 20px;
@@ -107,47 +124,63 @@ st.markdown("""
         border-top: 1px solid #e6f9f5;
         margin-top: 40px;
     }
+    
+    /* Alerts */
     .stAlert {
         background-color: #ffffff !important;
         border-radius: 15px !important;
         border-left: 4px solid #14b8a6 !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
     }
+    
+    /* Spinner */
     .stSpinner {
         color: #0d9488 !important;
+    }
+    
+    /* Secondary buttons (teal border) */
+    .stButton button[kind="secondary"] {
+        background: transparent !important;
+        color: #0d9488 !important;
+        border: 2px solid #14b8a6 !important;
+        box-shadow: none !important;
+    }
+    .stButton button[kind="secondary"]:hover {
+        background: #14b8a6 !important;
+        color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- CÍM ---
+# --- TITLE ---
 st.title("Fake News Detector")
-st.markdown("*Add meg egy cikk szövegét, és megtudod, mennyire hiteles!*")
+st.markdown("*Paste an article text to check its credibility!*")
 st.markdown("---")
 
-# --- ELEMZŐ PROMPT ---
+# --- ANALYSIS PROMPT (ENGLISH) ---
 ANALYSIS_PROMPT = """
-Elemezd a következő cikket, és a választ JSON formátumban add meg az alábbi kulcsokkal:
-- credibility_score: szám 0-100 között
-- analysis: rövid indoklás (1-2 mondat)
-- issues: lista a problémákról (logikai ellentmondás, félrevezető információ, túlzó cím, érzelmi nyelvezet, elfogultság)
+Analyze the following article and provide your response in JSON format with these keys:
+- credibility_score: number between 0-100
+- analysis: brief explanation (1-2 sentences)
+- issues: list of problems (logical contradictions, misleading information, exaggerated headline, emotional language, bias)
 
-Cikk: 
+Article: 
 """
 
-# --- FŐ TARTALOM ---
+# --- MAIN CONTENT ---
 user_input = st.text_area(
-    "📝 **Cikk szövege:**",
+    "📝 **Article text:**",
     height=150,
-    placeholder="Ide másold a cikk szövegét..."
+    placeholder="Paste the article text here..."
 )
 
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    analyze_btn = st.button("🔍 Elemzés indítása", use_container_width=True)
+    analyze_btn = st.button("🔍 Analyze", use_container_width=True)
 
-# --- ELEMZÉS ---
+# --- RESULT DISPLAY ---
 if analyze_btn and user_input:
-    with st.spinner("🔎 Elemzés folyamatban..."):
+    with st.spinner("🔎 Analyzing..."):
         try:
             response = client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
@@ -161,29 +194,29 @@ if analyze_btn and user_input:
             if json_match:
                 data = json.loads(json_match.group())
             else:
-                data = {"credibility_score": 50, "analysis": raw[:200], "issues": ["Nem sikerült elemezni"]}
+                data = {"credibility_score": 50, "analysis": raw[:200], "issues": ["Failed to analyze"]}
 
             score = data.get("credibility_score", 50)
-            analysis = data.get("analysis", "Nincs elemzés")
+            analysis = data.get("analysis", "No analysis available")
             issues = data.get("issues", [])
 
-            # --- SZÍN MEGHATÁROZÁSA ---
+            # --- COLOR DETERMINATION (TEAL SHADES) ---
             if score >= 80:
-                color = "#0d9488"
-                label = "HITELES"
-                desc = "A cikk megbízható forrásból származik."
+                color = "#0d9488"      # dark teal
+                label = "CREDIBLE"
+                desc = "The article appears to be from a reliable source."
             elif score >= 60:
-                color = "#14b8a6"
-                label = "MEGKÉRDŐJELEZHETŐ"
-                desc = "A cikk néhány ponton aggályos."
+                color = "#14b8a6"      # medium teal
+                label = "QUESTIONABLE"
+                desc = "The article has some concerning points."
             elif score >= 40:
-                color = "#f59e0b"
-                label = "GYANÚS"
-                desc = "A cikk több problémát is mutat."
+                color = "#f59e0b"      # gold (warning)
+                label = "SUSPICIOUS"
+                desc = "The article shows multiple issues."
             else:
-                color = "#ef4444"
-                label = "VALÓSZÍNŰLEG HAMIS"
-                desc = "A cikk erősen félrevezető."
+                color = "#ef4444"      # red (critical)
+                label = "LIKELY FALSE"
+                desc = "The article appears to be highly misleading."
 
             st.session_state['last_result'] = {
                 'score': score,
@@ -195,9 +228,9 @@ if analyze_btn and user_input:
             }
 
         except Exception as e:
-            st.error(f"❌ Hiba: {e}")
+            st.error(f"❌ Error: {e}")
 
-# --- EREDMÉNY MEGJELENÍTÉSE ---
+# --- RESULT DISPLAY ---
 if 'last_result' in st.session_state:
     res = st.session_state['last_result']
     score = res['score']
@@ -210,41 +243,41 @@ if 'last_result' in st.session_state:
     st.markdown("---")
     st.markdown(f"""
     <div class="result-card">
-        <div class="label">Hitelességi szint</div>
+        <div class="label">🎯 Credibility Score</div>
         <div class="score" style="color: {color};">{score}%</div>
         <h2 style="color: {color};">{label}</h2>
         <div class="desc">{desc}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("### Részletes elemzés")
+    st.markdown("### 📋 Detailed Analysis")
 
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("Mi alapján értékeltem?", use_container_width=True):
+        if st.button("📝 How did I evaluate?", use_container_width=True):
             st.session_state['show_analysis'] = True
-        if st.button("Összegzés", use_container_width=True):
+        if st.button("📊 Summary", use_container_width=True):
             st.session_state['show_summary'] = True
 
     with col2:
-        if st.button("Részletes problémák", use_container_width=True):
+        if st.button("🔍 Detailed issues", use_container_width=True):
             st.session_state['show_issues'] = True
-        if st.button("Új elemzés", use_container_width=True):
+        if st.button("🔄 New analysis", use_container_width=True):
             st.session_state['last_result'] = None
             st.rerun()
 
     if st.session_state.get('show_analysis', False):
         st.markdown("""
         <div class="detail-content">
-            <b>Mi alapján értékeltem?</b><br><br>
-            A cikket az alábbi <b>5 szempont</b> alapján vizsgáltam:
+            <b>📝 How did I evaluate?</b><br><br>
+            The article was examined based on <b>5 key criteria</b>:
             <ol style="margin-top: 10px; line-height: 1.8;">
-                <li><b>Logikai és ténybeli ellentmondások</b> – Van-e ellentmondás a szövegben?</li>
-                <li><b>Félrevezető információk</b> – Kiragadott vagy félrevezető állítások?</li>
-                <li><b>Túlzó cím</b> – A cím szenzációhajhász?</li>
-                <li><b>Érzelmi nyelvezet</b> – Túlzott érzelmi töltet?</li>
-                <li><b>Elfogultság</b> – Egyoldalú a bemutatás?</li>
+                <li><b>Logical and factual contradictions</b> – Are there contradictions in the text?</li>
+                <li><b>Misleading information</b> – Out-of-context or deceptive claims?</li>
+                <li><b>Exaggerated headline</b> – Is the headline sensationalist?</li>
+                <li><b>Emotional language</b> – Excessive emotional manipulation?</li>
+                <li><b>Bias</b> – Is the presentation one-sided?</li>
             </ol>
         </div>
         """, unsafe_allow_html=True)
@@ -253,25 +286,25 @@ if 'last_result' in st.session_state:
     if st.session_state.get('show_summary', False):
         st.markdown(f"""
         <div class="detail-content">
-            <b>Összegzés</b><br><br>
+            <b>📊 Summary</b><br><br>
             {analysis}
         </div>
         """, unsafe_allow_html=True)
         st.session_state['show_summary'] = False
 
     if st.session_state.get('show_issues', False):
-        issues_html = "".join([f"<li>{issue}</li>" for issue in issues]) if issues else "<li>Nincs konkrét probléma</li>"
+        issues_html = "".join([f"<li>{issue}</li>" for issue in issues]) if issues else "<li>✅ No specific issues found</li>"
         st.markdown(f"""
         <div class="detail-content">
-            <b>Részletes problémák</b><br>
+            <b>🔍 Detailed issues</b><br>
             <ul style="margin-top: 10px; line-height: 1.8;">{issues_html}</ul>
         </div>
         """, unsafe_allow_html=True)
         st.session_state['show_issues'] = False
 
-# --- LÁBLÉC ---
+# --- FOOTER ---
 st.markdown("""
 <div class="footer">
-    Fake News Detector v2.0 | Működteti: Groq AI | Ingyenes oktatási projekt
+    Fake News Detector v2.0 | Powered by Groq AI | Free educational project
 </div>
 """, unsafe_allow_html=True)
