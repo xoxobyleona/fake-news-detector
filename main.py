@@ -17,32 +17,23 @@ st.set_page_config(
 # --- CUSTOM CSS (WHITE-TEAL) ---
 st.markdown("""
 <style>
-    /* Full background */
     .stApp {
         background: linear-gradient(135deg, #f0fdfa, #e6f9f5) !important;
     }
-    
-    /* All text */
     .stApp, .stMarkdown, p, div, span, label {
         color: #1a2e35 !important;
     }
-    
-    /* Title */
     h1 {
         color: #0d9488 !important;
         text-align: center !important;
         font-family: 'Arial Black', sans-serif !important;
         font-size: 3rem !important;
     }
-    
-    /* Subtitle */
     .stMarkdown p {
         color: #1a2e35 !important;
         text-align: center !important;
         font-size: 1.2rem !important;
     }
-    
-    /* Text area */
     .stTextArea textarea {
         background-color: #ffffff !important;
         color: #1a2e35 !important;
@@ -55,8 +46,6 @@ st.markdown("""
         border-color: #0d9488 !important;
         box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2) !important;
     }
-    
-    /* Button */
     .stButton button {
         background: linear-gradient(135deg, #14b8a6, #0d9488) !important;
         color: white !important;
@@ -71,8 +60,6 @@ st.markdown("""
         transform: scale(1.03) !important;
         box-shadow: 0 6px 25px rgba(13, 148, 136, 0.4) !important;
     }
-    
-    /* Result card */
     .result-card {
         background: #ffffff;
         border-radius: 20px;
@@ -101,8 +88,6 @@ st.markdown("""
         color: #5a7a82;
         margin-top: 8px;
     }
-    
-    /* Detail content box */
     .detail-content {
         background: #ffffff;
         border-radius: 15px;
@@ -114,8 +99,6 @@ st.markdown("""
     .detail-content b {
         color: #0d9488;
     }
-    
-    /* Footer */
     .footer {
         text-align: center;
         padding: 20px;
@@ -124,21 +107,15 @@ st.markdown("""
         border-top: 1px solid #e6f9f5;
         margin-top: 40px;
     }
-    
-    /* Alerts */
     .stAlert {
         background-color: #ffffff !important;
         border-radius: 15px !important;
         border-left: 4px solid #14b8a6 !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
     }
-    
-    /* Spinner */
     .stSpinner {
         color: #0d9488 !important;
     }
-    
-    /* Secondary buttons (teal border) */
     .stButton button[kind="secondary"] {
         background: transparent !important;
         color: #0d9488 !important;
@@ -161,8 +138,15 @@ st.markdown("---")
 ANALYSIS_PROMPT = """
 Analyze the following article and provide your response in JSON format with these keys:
 - credibility_score: number between 0-100
-- analysis: brief explanation (1-2 sentences)
-- issues: list of problems (logical contradictions, misleading information, exaggerated headline, emotional language, bias)
+- analysis: brief summary (1-2 sentences only!)
+- issues: list of problems found. If no problems found, return an empty list [].
+
+Check for these issues:
+- Logical contradictions
+- Misleading information
+- Exaggerated or sensationalist headline
+- Emotional manipulation
+- Bias or one-sidedness
 
 Article: 
 """
@@ -194,27 +178,27 @@ if analyze_btn and user_input:
             if json_match:
                 data = json.loads(json_match.group())
             else:
-                data = {"credibility_score": 50, "analysis": raw[:200], "issues": ["Failed to analyze"]}
+                data = {"credibility_score": 50, "analysis": "Unable to analyze.", "issues": ["Failed to parse response"]}
 
             score = data.get("credibility_score", 50)
-            analysis = data.get("analysis", "No analysis available")
+            analysis = data.get("analysis", "No summary available.")
             issues = data.get("issues", [])
 
             # --- COLOR DETERMINATION (TEAL SHADES) ---
             if score >= 80:
-                color = "#0d9488"      # dark teal
+                color = "#0d9488"
                 label = "CREDIBLE"
                 desc = "The article appears to be from a reliable source."
             elif score >= 60:
-                color = "#14b8a6"      # medium teal
+                color = "#14b8a6"
                 label = "QUESTIONABLE"
                 desc = "The article has some concerning points."
             elif score >= 40:
-                color = "#f59e0b"      # gold (warning)
+                color = "#f59e0b"
                 label = "SUSPICIOUS"
                 desc = "The article shows multiple issues."
             else:
-                color = "#ef4444"      # red (critical)
+                color = "#ef4444"
                 label = "LIKELY FALSE"
                 desc = "The article appears to be highly misleading."
 
@@ -273,7 +257,7 @@ if 'last_result' in st.session_state:
             <b>📝 How did I evaluate?</b><br><br>
             The article was examined based on <b>5 key criteria</b>:
             <ol style="margin-top: 10px; line-height: 1.8;">
-                <li><b>Logical and factual contradictions</b> – Are there contradictions in the text?</li>
+                <li><b>Logical contradictions</b> – Are there contradictions in the text?</li>
                 <li><b>Misleading information</b> – Out-of-context or deceptive claims?</li>
                 <li><b>Exaggerated headline</b> – Is the headline sensationalist?</li>
                 <li><b>Emotional language</b> – Excessive emotional manipulation?</li>
@@ -293,13 +277,23 @@ if 'last_result' in st.session_state:
         st.session_state['show_summary'] = False
 
     if st.session_state.get('show_issues', False):
-        issues_html = "".join([f"<li>{issue}</li>" for issue in issues]) if issues else "<li>✅ No specific issues found</li>"
-        st.markdown(f"""
-        <div class="detail-content">
-            <b>🔍 Detailed issues</b><br>
-            <ul style="margin-top: 10px; line-height: 1.8;">{issues_html}</ul>
-        </div>
-        """, unsafe_allow_html=True)
+        if issues and len(issues) > 0:
+            issues_html = "".join([f"<li>• {issue}</li>" for issue in issues])
+            st.markdown(f"""
+            <div class="detail-content">
+                <b>🔍 Detailed issues</b><br>
+                <ul style="margin-top: 10px; line-height: 1.8; list-style-type: none; padding-left: 0;">
+                    {issues_html}
+                </ul>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div class="detail-content">
+                <b>🔍 Detailed issues</b><br><br>
+                ✅ No issues found. The article appears to be consistent and well-sourced.
+            </div>
+            """, unsafe_allow_html=True)
         st.session_state['show_issues'] = False
 
 # --- FOOTER ---
