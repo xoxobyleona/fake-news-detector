@@ -167,7 +167,7 @@ if analyze_btn and user_input:
     with st.spinner("🔎 Analyzing..."):
         try:
             response = client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
+                model="openai/gpt-oss-120b",
                 messages=[{"role": "user", "content": ANALYSIS_PROMPT + user_input}],
                 temperature=0.0,
                 max_tokens=800
