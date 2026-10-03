@@ -215,7 +215,7 @@ if analyze_btn and user_input:
             st.error(f"❌ Error: {e}")
 
 # --- RESULT DISPLAY ---
-if 'last_result' in st.session_state:
+if 'last_result' in st.session_state and st.session_state['last_result'] is not None:
     res = st.session_state['last_result']
     score = res['score']
     label = res['label']
@@ -248,7 +248,7 @@ if 'last_result' in st.session_state:
         if st.button("🔍 Detailed issues", use_container_width=True):
             st.session_state['show_issues'] = True
         if st.button("🔄 New analysis", use_container_width=True):
-            st.session_state['last_result'] = None
+            del st.session_state['last_result']
             st.rerun()
 
     if st.session_state.get('show_analysis', False):
